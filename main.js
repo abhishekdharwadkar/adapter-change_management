@@ -192,7 +192,36 @@ class ServiceNowAdapter extends EventEmitter {
      * Note how the object was instantiated in the constructor().
      * get() takes a callback function.
      */
-    this.connector.get(callback);
+    try {
+      return this.connector.get((returnData, returnError) => { 
+        if (returnError) {
+          return callback(null, returnError);
+        }
+
+        const ticketList = [];
+
+        if(returnData.body) {
+          const jsonBody = JSON.parse(returnData.body);
+          const results = jsonBody.result;
+          results.forEach(result => {
+            let ticket = {};
+            ticket.change_ticket_number = result.number;
+            ticket.active = result.active;
+            ticket.priority = result.priority;
+            ticket.description = result.description;
+            ticket.work_start = result.work_start;
+            ticket.work_end = result.work_end;
+            ticket.change_ticket_key = result.sys_id;
+            ticketList.push(ticket);
+          });
+        }
+
+        return callback(ticketList, null);
+      });
+    } catch(error) {
+      log.error('ServiceNow: Failed to get record.');
+      return callback(null, error);
+    }
   }
 
   /**
@@ -211,7 +240,31 @@ class ServiceNowAdapter extends EventEmitter {
      * Note how the object was instantiated in the constructor().
      * post() takes a callback function.
      */
-     this.connector.post(callback);
+    try {
+      return this.connector.post((returnData, returnError) => { 
+        if (returnError) {
+          return callback(null, returnError);
+        }
+
+        const ticket = {};
+        if(returnData.body) {
+          const jsonBody = JSON.parse(returnData.body);
+          const result = jsonBody.result;
+          ticket.change_ticket_number = result.number;
+          ticket.active = result.active;
+          ticket.priority = result.priority;
+          ticket.description = result.description;
+          ticket.work_start = result.work_start;
+          ticket.work_end = result.work_end;
+          ticket.change_ticket_key = result.sys_id;
+        }
+
+        return callback(ticket, null);
+      });
+    } catch(error) {
+      log.error('ServiceNow: Failed to post record.');
+      return callback(null, error);
+    } 
   }
 }
 
